@@ -43,5 +43,4 @@ dependencies:
   - nbconvert==5.5.0
   - pydocumentdb>=2.3.3
   - pymanopt==0.2.3
-  - xlearn==0.40a1
   - nni==0.5.2.1.1
