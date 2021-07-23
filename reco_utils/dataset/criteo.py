@@ -16,7 +16,7 @@ from reco_utils.common.notebook_utils import is_databricks
 
 
 CRITEO_URL = {
-    "full": "https://s3-eu-west-1.amazonaws.com/kaggle-display-advertising-challenge-dataset/dac.tar.gz",
+    "full": "https://ndownloader.figshare.com/files/10082655",
     "sample": "http://labs.criteo.com/wp-content/uploads/2015/04/dac_sample.tar.gz",
 }
 DEFAULT_HEADER = (
@@ -174,4 +174,3 @@ def get_spark_schema(header=DEFAULT_HEADER):
     for i in range(26):
         schema.add(StructField(header[i + n_ints], StringType()))
     return schema
-

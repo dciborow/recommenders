@@ -3,15 +3,17 @@
 
 schedules:
 - cron: "7 4 * * *"
-  displayName: Nightly build master
+  displayName: Nightly build main
   branches:
     include:
-    - master
+    - main
+  always: false # only run if there have been source code changes since the last successful scheduled run
 - cron: "7 16 * * *"
   displayName: Nightly build staging
   branches:
     include:
     - staging
+  always: true
 
 trigger: none
 
@@ -34,7 +36,7 @@ jobs:
     displayName: 'Remove Conda Env if it exists'
 
   - script: |
-      python ./scripts/generate_conda_file.py --gpu --name nightly_reco_gpu
+      python ./tools/generate_conda_file.py --gpu --name nightly_reco_gpu
       conda env create --quiet -f nightly_reco_gpu.yaml --verbose
     displayName: 'Setup Conda Env'
 

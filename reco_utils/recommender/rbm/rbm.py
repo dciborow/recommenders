@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 
 class RBM:
     """Restricted  Boltzmann Machine"""
+
     def __init__(
         self,
         hidden_units=500,
@@ -27,7 +28,7 @@ class RBM:
         sampling_protocol=[50, 70, 80, 90, 100],
         debug=False,
         with_metrics=False,
-        seed=42
+        seed=42,
     ):
         """Implementation of a multinomial Restricted Boltzmann Machine for collaborative filtering
         in numpy/pandas/tensorflow
@@ -107,8 +108,6 @@ class RBM:
         np.random.seed(self.seed)
         tf.set_random_seed(self.seed)
 
-        log.info("TensorFlow version: {}".format(tf.__version__))
-
     def time(self):
         """Time a particular section of the code - call this once to set the state somewhere
         in the code, then call it again to return the elapsed time since last call.
@@ -145,8 +144,6 @@ class RBM:
         Returns:
             tf.Tensor: Float32 tensor of sampled units. The value is 1 if pr>g and 0 otherwise.
         """
-
-        
 
         # sample from a Bernoulli distribution with same dimensions as input distribution
         g = tf.convert_to_tensor(np.random.uniform(size=pr.shape[1]), dtype=tf.float32)
@@ -260,7 +257,9 @@ class RBM:
             self.w = tf.get_variable(
                 "weight",
                 [self.Nvisible, self.Nhidden],
-                initializer=tf.random_normal_initializer(stddev=self.stdv, seed=self.seed),
+                initializer=tf.random_normal_initializer(
+                    stddev=self.stdv, seed=self.seed
+                ),
                 dtype="float32",
             )
 
@@ -277,7 +276,6 @@ class RBM:
                 initializer=tf.zeros_initializer(),
                 dtype="float32",
             )
-
 
     def sample_hidden_units(self, vv):
         """Sampling: In RBM we use Contrastive divergence to sample the parameter space. In order to do that we need
@@ -355,7 +353,6 @@ class RBM:
 
         return pvh, v_
 
-
     def gibbs_sampling(self):
         """Gibbs sampling: Determines an estimate of the model configuration via sampling. In the binary
         RBM we need to impose that unseen movies stay as such, i.e. the sampling phase should not modify
@@ -430,7 +427,6 @@ class RBM:
 
             if self.debug:
                 log.info("percentage of epochs covered so far %f2" % (epoch_percentage))
-
 
     def accuracy(self, vp):
         """Train/Test Mean average precision

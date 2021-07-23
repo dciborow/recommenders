@@ -169,6 +169,10 @@ class SequentialBaseModel(BaseModel):
                         sess=train_sess,
                         save_path=self.hparams.MODEL_DIR + "epoch_" + str(epoch),
                     )
+                    checkpoint_path = self.saver.save(
+                        sess=train_sess,
+                        save_path=os.path.join(self.hparams.MODEL_DIR, "best_model")  
+                    )
 
         if self.hparams.write_tfevents:
             self.writer.close()
@@ -317,23 +321,10 @@ class SequentialBaseModel(BaseModel):
         self.embed_params.append(involved_cate_embedding)
 
         self.target_item_embedding = tf.concat(
-            [self.item_embedding, self.cate_embedding], 1
+            [self.item_embedding, self.cate_embedding], -1
         )
         tf.summary.histogram("target_item_embedding_output", self.target_item_embedding)
 
-        # dropout after embedding
-        self.user_embedding = self._dropout(
-            self.user_embedding, keep_prob=1 - self.hparams.embedding_dropout
-        )
-        self.item_history_embedding = self._dropout(
-            self.item_history_embedding, keep_prob=1 - self.hparams.embedding_dropout
-        )
-        self.cate_history_embedding = self._dropout(
-            self.cate_history_embedding, keep_prob=1 - self.hparams.embedding_dropout
-        )
-        self.target_item_embedding = self._dropout(
-            self.target_item_embedding, keep_prob=1 - self.hparams.embedding_dropout
-        )
 
     def _add_norm(self):
         """Regularization for embedding variables and other variables."""

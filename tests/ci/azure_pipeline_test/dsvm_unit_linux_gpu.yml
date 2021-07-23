@@ -3,13 +3,13 @@
 
 # Pull request against these branches will trigger this build
 pr:
-- master
+- main
 - staging
 
 #Any commit to this branch will trigger the build.
 trigger:
 - staging
-- master
+- main
 
 variables:
 - group: LinuxAgentPool
@@ -30,7 +30,7 @@ jobs:
   # Uncomment if needed
   # Conda creation can take around 10min
   # - bash: |
-  #     python scripts/generate_conda_file.py  --gpu
+  #     python tools/generate_conda_file.py  --gpu
   #     conda env update -n reco_gpu -f reco_gpu.yaml
   #   displayName: 'Creating Conda Environment with dependencies'
 
