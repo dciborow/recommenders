@@ -24,6 +24,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+license.txt
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -37,6 +38,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
+junit
 .tox/
 .coverage
 .coverage.*
@@ -85,8 +87,8 @@ celerybeat-schedule
 *.sage.py
 
 # Environments
-.env
-.venv
+.env*
+.venv*
 env/
 venv/
 ENV/
@@ -144,7 +146,6 @@ ml-20m/
 *.jar
 *.item
 *.pkl
-*.txt
 *.pdf
 .pretrain
 *.npy
@@ -156,6 +157,14 @@ ml-20m/
 *.model
 *.mml
 nohup.out
+*.svg
+*.html
+*.js
+*.css
+*.tff
+*.woff
+*.woff2
+*.eot
 
 #####  kdd 2020 tutorial data folder
 examples/07_tutorials/KDD2020-tutorial/data_folder/
@@ -164,4 +173,5 @@ examples/07_tutorials/KDD2020-tutorial/data_folder/
 *.tsv
 *.sh
 
-tests/resources/
+tests/**/resources/
+reports/

@@ -1,16 +1,13 @@
-import sys
-
-sys.path.append("../")
 import pandas as pd
 import numpy as np
 from pyspark.ml.recommendation import ALS
 from pyspark.sql.types import StructType, StructField
-from pyspark.sql.types import StringType, FloatType, IntegerType, LongType
+from pyspark.sql.types import FloatType, IntegerType, LongType
 from fastai.collab import collab_learner, CollabDataBunch
 import surprise
 import cornac
 
-from reco_utils.common.constants import (
+from recommenders.utils.constants import (
     COL_DICT,
     DEFAULT_K,
     DEFAULT_USER_COL,
@@ -20,35 +17,34 @@ from reco_utils.common.constants import (
     DEFAULT_TIMESTAMP_COL,
     SEED,
 )
-from reco_utils.common.timer import Timer
-from reco_utils.common.spark_utils import start_or_get_spark
-from reco_utils.recommender.sar.sar_singlenode import SARSingleNode
-from reco_utils.recommender.ncf.ncf_singlenode import NCF
-from reco_utils.recommender.ncf.dataset import Dataset as NCFDataset
-from reco_utils.recommender.surprise.surprise_utils import (
+from recommenders.utils.timer import Timer
+from recommenders.utils.spark_utils import start_or_get_spark
+from recommenders.models.sar.sar_singlenode import SARSingleNode
+from recommenders.models.ncf.ncf_singlenode import NCF
+from recommenders.models.ncf.dataset import Dataset as NCFDataset
+from recommenders.models.surprise.surprise_utils import (
     predict,
     compute_ranking_predictions,
 )
-from reco_utils.recommender.fastai.fastai_utils import (
+from recommenders.models.fastai.fastai_utils import (
     cartesian_product,
     score,
-    hide_fastai_progress_bar,
 )
-from reco_utils.recommender.cornac.cornac_utils import predict_ranking
-from reco_utils.recommender.deeprec.models.graphrec.lightgcn import LightGCN
-from reco_utils.recommender.deeprec.DataModel.ImplicitCF import ImplicitCF
-from reco_utils.recommender.deeprec.deeprec_utils import prepare_hparams
-from reco_utils.evaluation.spark_evaluation import (
+from recommenders.models.cornac.cornac_utils import predict_ranking
+from recommenders.models.deeprec.models.graphrec.lightgcn import LightGCN
+from recommenders.models.deeprec.DataModel.ImplicitCF import ImplicitCF
+from recommenders.models.deeprec.deeprec_utils import prepare_hparams
+from recommenders.evaluation.spark_evaluation import (
     SparkRatingEvaluation,
     SparkRankingEvaluation,
 )
-from reco_utils.evaluation.python_evaluation import (
+from recommenders.evaluation.python_evaluation import (
     map_at_k,
     ndcg_at_k,
     precision_at_k,
     recall_at_k,
 )
-from reco_utils.evaluation.python_evaluation import rmse, mae, rsquared, exp_var
+from recommenders.evaluation.python_evaluation import rmse, mae, rsquared, exp_var
 
 
 def prepare_training_als(train, test):
@@ -270,20 +266,13 @@ def recommend_k_ncf(model, test, train, top_k=DEFAULT_K, remove_seen=True):
     return topk_scores, t
 
 
-def prepare_training_bpr(train, test):
+def prepare_training_cornac(train, test):
     return cornac.data.Dataset.from_uir(
         train.drop(DEFAULT_TIMESTAMP_COL, axis=1).itertuples(index=False), seed=SEED
     )
 
 
-def train_bpr(params, data):
-    model = cornac.models.BPR(**params)
-    with Timer() as t:
-        model.fit(data)
-    return model, t
-
-
-def recommend_k_bpr(model, test, train, top_k=DEFAULT_K, remove_seen=True):
+def recommend_k_cornac(model, test, train, top_k=DEFAULT_K, remove_seen=True):
     with Timer() as t:
         topk_scores = predict_ranking(
             model,
@@ -294,6 +283,20 @@ def recommend_k_bpr(model, test, train, top_k=DEFAULT_K, remove_seen=True):
             remove_seen=remove_seen,
         )
     return topk_scores, t
+
+
+def train_bpr(params, data):
+    model = cornac.models.BPR(**params)
+    with Timer() as t:
+        model.fit(data)
+    return model, t
+
+
+def train_bivae(params, data):
+    model = cornac.models.BiVAECF(**params)
+    with Timer() as t:
+        model.fit(data)
+    return model, t
 
 
 def prepare_training_sar(train, test):

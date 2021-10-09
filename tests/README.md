@@ -107,37 +107,44 @@ For executing the PySpark integration tests:
 
 Several of the tests are skipped for various reasons which are noted below.
 
-<table><tr>
+<table>
+<tr>
 <td>Test Module</td>
 <td>Test</td>
 <td>Test Environment</td>
 <td>Reason</td>
-</tr><tr>
-<td>unit/test_nni</td>
+</tr>
+<tr>
+<td>unit/recommenders/datasets/test_wikidata</td>
 <td>*</td>
-<td>Windows</td>
-<td>NNI is not currently supported on Windows</td>
-</tr><tr>
-<td>integration/test_notebooks_python</td>
-<td>test_nni_tuning_svd</td>
-<td>Windows</td>
-<td>NNI is not currently supported on Windows</td>
-</tr><tr>
-<td>*/test_notebook_pyspark</td>
-<td>test_mmlspark_lightgbm_criteo_runs</td>
-<td>Windows</td>
-<td>MML Spark and LightGBM issue: https://github.com/Azure/mmlspark/issues/483</td>
-</tr><tr>
-<td>unit/test_gpu_utils</td>
-<td>test_get_cuda_version</td>
-<td>Windows</td>
-<td>Current method for retrieval of CUDA info on Windows is install specific</td>
-</tr><tr>
-<td>nightly*, *notebooks*</td>
-<td>vowpalwabbit: test_surprise_svd_integration  test_vw_deep_dive_integration test_vw_deep_dive_smoke test_vw_deep_dive_runs/vowpal_wabbit_deep_dive test_vowpal_wabbit.py</td>
-<td>AzureML</td>
-<td>To optimize our efforts, we decided to wait until a pip installable version of vowpalwabbit is again available and then it can be added back into the AzureML test suite.</td>
-</tr></table>
+<td>Linux</td>
+<td>Wikidata API is unstable</td>
+</tr>
+<tr>
+<td>integration/recommenders/datasets/test_notebooks_python</td>
+<td>test_wikidata</td>
+<td>Linux</td>
+<td>Wikidata API is unstable</td>
+</tr>
+<tr>
+<td>*/test_notebooks_python</td>
+<td>test_vw*</td>
+<td>Linux</td>
+<td>VW pip package has installation incompatibilities</td>
+</tr>
+<tr>
+<td>*/test_notebooks_python</td>
+<td>test_nni*</td>
+<td>Linux</td>
+<td>NNI pip package has installation incompatibilities</td>
+</tr>
+<tr>
+<td>integration/examples/test_notebooks_python</td>
+<td>test_xlearn*</td>
+<td>Linux</td>
+<td>xLearn pip package has installation incompatibilities</td>
+</tr>
+</table>
 
 In order to skip a test because there is an OS or upstream issue which cannot be resolved you can use pytest [annotations](https://docs.pytest.org/en/latest/skipping.html).
 
@@ -150,6 +157,28 @@ Example:
 
 </details>
 
+### Test execution with tox
+
+[Tox](https://tox.readthedocs.io/en/latest/) is a great tool for both virtual environment management and test execution. Tox acts like a front-end for our CI workflows. Our existing [CI pipelines](https://github.com/microsoft/recommenders/actions) in GitHub is leveraging it to orchestrate the build. This way we can provide a **parity** in both local and remote execution environments if both run tox. Run tox and no more **"tests run fine in my dev box but fail in the remote build"**! 
+
+1. If you haven't, `pip install tox`
+2. To run static analysis: `tox -e flake8`
+3. To run any of our test suites:
+    `tox -e {TOX_ENV} -- {PYTEST_PARAM}`
+
+    where 
+    - `TOX_ENV` can be `cpu|gpu|spark|all`, each env maps to the "extra" dependency, for example recommenders[gpu], and recommenders[spark]. It can also be any of the [default envs](https://tox.readthedocs.io/en/latest/config.html#tox-environments): `py|pyNM`
+    - `PYTEST_PARAM` are any standard parameters to supply to `pytest` cli.
+
+    For example:
+    
+    1. `tox -e cpu -- tests/unit -m "not notebook and not spark and not gpu` (runs the unit tests with `recommenders[dev,example]` dependencies)
+    2. `tox -e gpu -- tests/unit -m "gpu and notebook"` (runs the gpu notebook tests with `recommenders[dev,example,gpu]` dependencies)
+    3. `tox -e spark -- tests/unit -m "spark and notebook"` (runs the spark notebook tests with `recommenders[dev,example,spark]` dependencies)
+    4. `tox -e all -- tests/unit` (to run all of the unit tests with `recommenders[all]` dependencies)
+    5. `tox -e py -- tests/unit` (runs the unit tests under the default python interpreter with `recommenders[all]`)
+    6. `tox -e py37 -- tests/unit` (runs the unit tests under Python3.7 with `recommenders[all]` )
+
 ## How to create tests on notebooks with Papermill
 
 In the notebooks of this repo, we use [Papermill](https://github.com/nteract/papermill) in unit, smoke and integration tests. Papermill is a tool that enables you to parameterize notebooks, execute and collect metrics across the notebooks, and summarize collections of notebooks.
@@ -161,12 +190,11 @@ Executing a notebook with Papermill is easy, this is what we mostly do in the un
 ```python
 import pytest
 import papermill as pm
-from tests.notebooks_common import OUTPUT_NOTEBOOK, KERNEL_NAME
 
 @pytest.mark.notebooks
-def test_sar_single_node_runs(notebooks):
+def test_sar_single_node_runs(notebooks, output_notebook, kernel_name):
     notebook_path = notebooks["sar_single_node"]
-    pm.execute_notebook(notebook_path, OUTPUT_NOTEBOOK, kernel_name=KERNEL_NAME)
+    pm.execute_notebook(notebook_path, output_notebook, kernel_name=kernel_name)
 ```
 
 Notice that the input of the function is a fixture defined in [conftest.py](conftest.py). For more information, please see the [definition of fixtures in PyTest](https://docs.pytest.org/en/latest/fixture.html).
@@ -194,20 +222,19 @@ This is an example on how we do a smoke test. The complete code can be found in 
 ```python
 import pytest
 import papermill as pm
-from tests.notebooks_common import OUTPUT_NOTEBOOK, KERNEL_NAME
 
 TOL = 0.05
 
 @pytest.mark.smoke
-def test_sar_single_node_smoke(notebooks):
+def test_sar_single_node_smoke(notebooks, output_notebook, kernel_name):
     notebook_path = notebooks["sar_single_node"]
     pm.execute_notebook(
         notebook_path,
-        OUTPUT_NOTEBOOK,
-        kernel_name=KERNEL_NAME,
+        output_notebook,
+        kernel_name=kernel_name,
         parameters=dict(TOP_K=10, MOVIELENS_DATA_SIZE="100k"),
     )
-    results = pm.read_notebook(OUTPUT_NOTEBOOK).dataframe.set_index("name")["value"]
+    results = pm.read_notebook(output_notebook).dataframe.set_index("name")["value"]
     assert results["precision"] == pytest.approx(0.326617179, TOL)
     assert results["recall"] == pytest.approx(0.175956743, TOL)
 ```
